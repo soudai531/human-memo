@@ -7,8 +7,265 @@ tags:
  - name: complaints
    description: 不満関連のAPI
 paths:
-  /complaint:
+  /complaints/:
     get:
+      summary: "不満一覧取得"
+      description: "不満の一覧を取得できます"
+      operationId: "listComplaint"
+      tags:
+        - complaints
+      parameters:
+        - name: limit
+          in: query
+          required: true
+          description: "リストに含まれるリソースの最大値"
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          required: true
+          description: "オフセット"
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
       responses:
         '200':
           description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintListDTO"
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+    post:
+      summary: "不満作成"
+      description: "不満を新規作成します。"
+      operationId: "createComplaint"
+      tags:
+        - complaints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintForm"
+      responses:
+        '201':
+          description: "Created"
+          headers:
+            location:
+              description: "作成されたリソースのURI"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintDTO"
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+  /complaints/{complaintId}:
+    get:
+      summary: "不満取得"
+      description: "指定されたIDの不満を1件取得します"
+      tags:
+        - complaints
+      operationId: "showComplaint"
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          description: "不満の詳細を取得する不満のID"
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintDTO"
+        '404':
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceNotFoundError"
+    put:
+      summary: "不満更新"
+      description: "指定された不満をリクエストボディの内容で上書きします"
+      operationId: "editComplaint"
+      tags:
+        - complaints
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          description: "更新するタスクのID"
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintForm"
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintDTO"
+        '400':
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+        '404':
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceNotFoundError"
+    delete:
+      summary: "不満削除"
+      description: "指定された不満を削除します"
+      operationId: "deleteComplaint"
+      tags:
+        - complaints
+      parameters:
+        - name: complaintId
+          in: path
+          required: true
+          description: "更新するタスクのID"
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: "No Content"
+        '404':
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceNotFoundError"
+components:
+  schemas:
+    ComplaintForm:
+      type: object
+      properties:
+        title:
+          type: string
+          description: "作成される不満のタイトル"
+          maxLength: 256
+          minLength: 1
+      required:
+        - title
+    ComplaintDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "不満ID"
+        title:
+          type: string
+          description: "不満のタイトル"
+        date:
+          type: string
+          description: "不満が作成された日時"
+    PageDTO:
+      description: "ページング情報"
+      type: object
+      properties:
+        limit:
+          description: "リクエストされたlimit"
+          type: integer
+          format: int32
+        offset:
+          description: "リクエストされたoffset"
+          type: integer
+          format: int64
+        size:
+          description: "取得できた件数"
+          type: integer
+          format: int32
+    ComplaintListDTO:
+      description: "不満のリスト"
+      type: object
+      properties:
+        page:
+          $ref: "#/components/schemas/PageDTO"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplaintDTO"
+      required:
+        - results
+    ResourceNotFoundError:
+      description: "指定したリソースが存在しない"
+      type: object
+      properties:
+        title:
+          type: string
+          description: "エラーのタイトル"
+          default: "Resource Not Found"
+        detail:
+          type: string
+          description: "エラーの詳細"
+      required:
+        - title
+        - detail
+    BadRequestError:
+      description: "リクエストが不正"
+      type: object
+      properties:
+        title:
+          type: string
+          description: "エラーのタイトル"
+          default: "Bad Request"
+        detail:
+          type: string
+          description: "エラーの詳細"
+          default: "リクエストが不正です。正しいリクエストでリトライしてください"
+        invalid-params:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvalidParam"
+      required:
+        - title
+        - detail
+        - invalid-params
+    InvalidParam:
+      description: "不正なリクエストについての詳細"
+      type: object
+      properties:
+        name:
+          type: string
+          description: "エラーが発生したフィールド名"
+        reason:
+          type: string
+          description: "エラーの理由"
+      required:
+        - name
+        - reason
