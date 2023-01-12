@@ -1,0 +1,14 @@
+openapi: "3.0.0"
+info:
+  title: HUMAN MEMO API Document
+  version: "0.0.1"
+  description: HUMAN MEMO API のドキュメントです
+tags:
+ - name: complaints
+   description: 不満関連のAPI
+paths:
+  /complaint:
+    get:
+      responses:
+        '200':
+          description: "OK"
